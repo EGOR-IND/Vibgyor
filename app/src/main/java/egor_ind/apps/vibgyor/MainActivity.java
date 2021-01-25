@@ -8,9 +8,11 @@ import androidx.core.app.ActivityCompat;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Locale;
+import java.util.Random;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
@@ -33,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean btnPressed;
     private final int AUDIO_REQUEST_CODE = 101;
-    private final int AUDIO_RECORDING_DELAY = 500;
+    private final int AUDIO_RECORDING_DELAY = 200;
     private double lastAmp = 0;
     private double brightPercent;
 
@@ -46,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
 
         ampvalTV = findViewById(R.id.ampVal);
         listenBtm = findViewById(R.id.listenBtn);
+        constraintLayout = findViewById(R.id.mainContainer);
+
         lp = getWindow().getAttributes();
         btnPressed = true;
         brightPercent = 75;
@@ -71,34 +75,7 @@ public class MainActivity extends AppCompatActivity {
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            final double amplitude = getMaxAmplitude();
-                            if (amplitude != 0) {
-                                double ampRatio;
-                                if (lastAmp != 0) {
-                                    ampRatio = amplitude / lastAmp;
-                                } else {
-                                    ampRatio = 0;
-                                }
-
-                                if (ampRatio > 1) {
-                                    ampRatio = ampRatio - 1;
-                                } else if (ampRatio < 1) {
-                                    ampRatio = -ampRatio;
-                                }
-
-                                brightPercent = 75 + (25 * ampRatio);
-
-                                if (brightPercent > 100) {
-                                    brightPercent = 100;
-                                } else if (brightPercent < 50) {
-                                    brightPercent = 50;
-                                }
-
-                                changeBrightness(Math.round(brightPercent) / (float)100);
-                                Log.d(TAG, "run: " + getWindow().getAttributes().screenBrightness + " " + brightPercent + " " + ampRatio);
-                                lastAmp = amplitude;
-                            }
-                            ampvalTV.setText(String.format(Locale.US, "%.2f", amplitude));
+                            makeVibe();
                             handler.postDelayed(this, AUDIO_RECORDING_DELAY);
                         }
                     }, AUDIO_RECORDING_DELAY);
@@ -175,5 +152,41 @@ public class MainActivity extends AppCompatActivity {
     private void changeBrightness(float brightness) {
         lp.screenBrightness = brightness;
         getWindow().setAttributes(lp);
+    }
+
+    private void makeVibe() {
+        final double amplitude = getMaxAmplitude();
+        if (amplitude != 0) {
+            double ampRatio;
+            if (lastAmp != 0) {
+                ampRatio = amplitude / lastAmp;
+                if (ampRatio > 1) {
+                    ampRatio = ampRatio - 1;
+                } else if (ampRatio < 1) {
+                    ampRatio = -ampRatio;
+                }
+            } else {
+                ampRatio = 0;
+            }
+
+            brightPercent = 75 + (25 * ampRatio);
+
+            if (amplitude > lastAmp) {
+                Random random = new Random();
+                String[] colorArr = getResources().getStringArray(R.array.color_array);
+                constraintLayout.setBackgroundColor(Color.parseColor(colorArr[random.nextInt(5)]));
+            }
+
+            if (brightPercent > 100) {
+                brightPercent = 100;
+            } else if (brightPercent < 50) {
+                brightPercent = 50;
+            }
+
+            changeBrightness(Math.round(brightPercent) / (float)100);
+            Log.d(TAG, "run: " + getWindow().getAttributes().screenBrightness + " " + brightPercent + " " + ampRatio);
+            lastAmp = amplitude;
+        }
+        ampvalTV.setText(String.format(Locale.US, "%.2f", amplitude));
     }
 }
