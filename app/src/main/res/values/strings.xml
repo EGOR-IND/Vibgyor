@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Vibgyor</string>
+    <string-array name="color_array">
+        <item>#f44336</item>
+        <item>#00e5ff</item>
+        <item>#76ff03</item>
+        <item>#ff9100</item>
+        <item>#d500f9</item>
+    </string-array>
 </resources>
