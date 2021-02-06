@@ -6,8 +6,6 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 
 import java.io.IOException;
-import java.security.Permission;
-import java.util.Locale;
 import java.util.Random;
 
 import android.Manifest;
@@ -17,11 +15,9 @@ import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.TextView;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
@@ -29,15 +25,12 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "FragmentActivity";
 
     private MediaRecorder mediaRecorder;
-    private TextView ampvalTV;
-    private Button listenBtm;
+    private ImageButton listenBtm;
     private ConstraintLayout constraintLayout;
 
-    private boolean btnPressed;
-    private final int AUDIO_REQUEST_CODE = 101;
-    private final int AUDIO_RECORDING_DELAY = 200;
-    private double lastAmp = 0;
-    private double brightPercent;
+    private boolean isStarted = false;
+    private final int AUDIO_REQUEST_CODE = 101, AUDIO_RECORDING_DELAY = 100;
+    private double lastAmp = 0, brightPercent;
 
     WindowManager.LayoutParams lp;
 
@@ -46,12 +39,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ampvalTV = findViewById(R.id.ampVal);
         listenBtm = findViewById(R.id.listenBtn);
         constraintLayout = findViewById(R.id.mainContainer);
 
         lp = getWindow().getAttributes();
-        btnPressed = true;
         brightPercent = 75;
 
         listenBtm.setEnabled(false);
@@ -66,10 +57,9 @@ public class MainActivity extends AppCompatActivity {
         listenBtm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (btnPressed) {
+                if (!isStarted) {
                     startRecording();
-                    Toast.makeText(MainActivity.this, "listening", Toast.LENGTH_SHORT).show();
-                    btnPressed = false;
+                    isStarted = true;
 
                     final Handler handler = new Handler();
                     handler.postDelayed(new Runnable() {
@@ -81,8 +71,7 @@ public class MainActivity extends AppCompatActivity {
                     }, AUDIO_RECORDING_DELAY);
                 } else {
                     stopRecording();
-                    btnPressed = true;
-                    Toast.makeText(MainActivity.this, "stopped listening", Toast.LENGTH_SHORT).show();
+                    isStarted = false;
                 }
             }
         });
@@ -103,7 +92,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        startRecording();
+        if (isStarted) {
+            startRecording();
+        }
     }
 
     @Override
@@ -124,6 +115,8 @@ public class MainActivity extends AppCompatActivity {
         try {
             mediaRecorder.prepare();
             mediaRecorder.start();
+            isStarted = true;
+            Toast.makeText(MainActivity.this, "listening", Toast.LENGTH_SHORT).show();
         } catch (IllegalStateException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -133,7 +126,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopRecording() {
         if (mediaRecorder != null) {
-            mediaRecorder.stop();
+            if (isStarted) {
+                mediaRecorder.stop();
+                Toast.makeText(MainActivity.this, "stopped listening", Toast.LENGTH_SHORT).show();
+            }
             mediaRecorder.release();
             mediaRecorder = null;
         }
@@ -184,9 +180,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             changeBrightness(Math.round(brightPercent) / (float)100);
-            Log.d(TAG, "run: " + getWindow().getAttributes().screenBrightness + " " + brightPercent + " " + ampRatio);
             lastAmp = amplitude;
         }
-        ampvalTV.setText(String.format(Locale.US, "%.2f", amplitude));
     }
 }
